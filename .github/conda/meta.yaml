@@ -10,8 +10,12 @@ source:
 requirements:
   host:
     - pip
-    - python
-    - setuptools-rust ==0.11.5
+    - python x.x
+    - setuptools
+    - setuptools-rust
+
+  run:
+    - python x.x
 
 test:
   imports:

@@ -9,6 +9,7 @@ jobs:
   build_and_package:
     runs-on: ${{ matrix.os }}
     strategy:
+      fail-fast: false
       matrix:
         os: [ubuntu-latest, windows-latest, macos-latest]
         python: [3.5, 3.6, 3.7, 3.8, 3.9]
@@ -24,26 +25,33 @@ jobs:
         uses: conda-incubator/setup-miniconda@v2
         with:
           auto-update-conda: true
+          auto-activate-base: false
+          activate-environment: "build-tokenizers"
           python-version: ${{ matrix.python }}
-          channels: "defaults,conda-forge"
-          conda-build-version: "3.20.5"
+          channels: conda-forge
+          # conda-build-version: "3.20.5"
 
       - name: Install Rust
         uses: actions-rs/toolchain@v1
         with:
           toolchain: stable
 
+      - name: Setup conda env
+        run: |
+          # conda create --name build-tokenizers python=${{ matrix.python }}
+          # conda activate build-tokenizers
+          # conda config --add channels conda-forge
+          conda install setuptools-rust
+          conda install -c defaults anaconda-client conda-build
+
       - name: Extract version
         working-directory: ./bindings/python
-        run: |
-          conda install -c conda-forge setuptools-rust
-          echo "TOKENIZERS_VERSION=`python setup.py --version`" >> $GITHUB_ENV
+        run: echo "TOKENIZERS_VERSION=`python setup.py --version`" >> $GITHUB_ENV
 
       - name: Build conda packages
-        run: conda build .github/conda
+        run: |
+          conda info
+          conda build .github/conda --python=${{ matrix.python }}
 
       - name: Upload to Anaconda
-
-        run: |
-          conda install anaconda-client
-          anaconda upload `conda build .github/conda --output`
+        run: anaconda upload `conda build .github/conda --output` --force
